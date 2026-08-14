@@ -109,6 +109,8 @@ tool_timeout_sec = 60
 
 ```bash
 blender --background --factory-startup --python tests/blender_automated_test.py
+blender --background --factory-startup --python tests/blender_conversion_test.py
+blender --background --factory-startup --python tests/blender_tcp_test.py
 ```
 
 手动 smoke test：在一个包含唯一目标 Armature（且含 `head`）的 Blender 中，
