@@ -1,10 +1,8 @@
 import queue
 import socket
 import threading
-import time
 
-from .pending import PendingRequest
-from .wire import read_message, send_response
+from .connection import handle_connection
 
 
 class BridgeSocketServer:
@@ -59,7 +57,10 @@ class BridgeSocketServer:
                 except socket.timeout:
                     continue
                 with connection:
-                    self._handle_connection(connection)
+                    handle_connection(
+                        connection, self.requests, self.stop_event,
+                        self.request_timeout,
+                    )
         except OSError as exc:
             if not self.stop_event.is_set():
                 self.last_error = str(exc)
@@ -67,27 +68,6 @@ class BridgeSocketServer:
             self.ready.clear()
             if server:
                 server.close()
-
-    def _handle_connection(self, connection):
-        request_id = None
-        try:
-            message = read_message(connection)
-            request_id = message.get("id")
-            pending = PendingRequest(
-                request_id, message.get("method"), message.get("params", {})
-            )
-            self.requests.put(pending)
-            deadline = time.monotonic() + self.request_timeout
-            while not pending.done.wait(0.05):
-                if self.stop_event.is_set() or time.monotonic() >= deadline:
-                    pending.error = "Blender main thread timed out processing the request"
-                    pending.cancelled = True
-                    break
-            response = {"id": request_id, "ok": pending.error is None}
-            response["error" if pending.error else "result"] = pending.error or pending.result
-        except (ValueError, OSError) as exc:
-            response = {"id": request_id, "ok": False, "error": str(exc)}
-        send_response(connection, response)
 
     def drain(self, handler, limit=8):
         for _index in range(limit):
