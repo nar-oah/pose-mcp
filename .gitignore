@@ -1,10 +1,17 @@
-# Python-generated files
 __pycache__/
-*.py[oc]
+*.pyc
+*.pyo
+*.pyd
 build/
 dist/
 wheels/
 *.egg-info
 
-# Virtual environments
-.venv
+.python-version
+.venv/
+venv/
+env/
+.DS_Store
+.AppleDouble
+.LSOverride
+output/runs/
