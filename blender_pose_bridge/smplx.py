@@ -7,7 +7,7 @@ from .armature import find_armature, pose_bone
 from .constants import BODY_BONES, BODY_OFFSETS, HAND_BONES, ROOT_BONE
 from .errors import PoseBridgeError
 from .rotation import vector3
-from .undo_ops import push_undo
+from .undo_ops import ensure_undo, push_undo
 
 
 # These conversion rules intentionally match reference/main.py.
@@ -49,6 +49,7 @@ def apply_smplx_pose(data):
     body_values = _rotvecs(data, "body_pose")
     hand_values = {side: _rotvecs(data, f"{side[0]}hand_pose") for side in ("left", "right")}
     root = pose_bone(armature, ROOT_BONE) if root_values else None
+    ensure_undo()
 
     for bone in armature.pose.bones:
         bone.rotation_quaternion = (1, 0, 0, 0)

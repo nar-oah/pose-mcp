@@ -5,7 +5,8 @@ from pydantic import Field
 
 from .bridge_client import BridgeClient
 from .models import (
-    BoneChange, RootPose, RotationMode, RotvecList, SmplxPose, Vector3,
+    BoneChange, ResetScope, RootPose, RotationMode, RotvecList, SmplxPose,
+    Vector3,
 )
 
 BatchChanges = Annotated[list[BoneChange], Field(min_length=1, max_length=256)]
@@ -62,7 +63,7 @@ def register_tools(mcp: MCPServer, bridge: BridgeClient) -> None:
         return bridge.call("apply_smplx_pose", pose.model_dump(exclude_none=True))
 
     @mcp.tool()
-    def reset_pose(scope: str = "all") -> dict[str, Any]:
+    def reset_pose(scope: ResetScope = "all") -> dict[str, Any]:
         """Reset the existing Armature to its base pose. Only scope='all' is valid."""
         if scope != "all":
             raise ValueError("scope must be 'all'")

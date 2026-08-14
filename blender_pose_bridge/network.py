@@ -78,6 +78,7 @@ class BridgeSocketServer:
             while not pending.done.wait(0.05):
                 if self.stop_event.is_set() or time.monotonic() >= deadline:
                     pending.error = "Blender main thread timed out processing the request"
+                    pending.cancelled = True
                     break
             response = {"id": request_id, "ok": pending.error is None}
             response["error" if pending.error else "result"] = pending.error or pending.result
@@ -91,6 +92,9 @@ class BridgeSocketServer:
                 pending = self.requests.get_nowait()
             except queue.Empty:
                 break
+            if pending.cancelled:
+                pending.done.set()
+                continue
             try:
                 pending.result = handler(pending.method, pending.params)
             except Exception as exc:

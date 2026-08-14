@@ -6,6 +6,7 @@ Vector3 = Annotated[list[FiniteFloat], Field(min_length=3, max_length=3)]
 RotvecList = Annotated[list[Vector3], Field(max_length=128)]
 RootPose = Annotated[list[Vector3], Field(min_length=1, max_length=1)]
 RotationMode = Literal["absolute", "delta"]
+ResetScope = Literal["all"]
 
 
 class BoneChange(BaseModel):

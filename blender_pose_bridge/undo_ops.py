@@ -4,9 +4,13 @@ from .armature import find_armature
 from .errors import PoseBridgeError
 
 
-def push_undo(message):
+def ensure_undo():
     if not bpy.ops.ed.undo_push.poll():
         raise PoseBridgeError("Blender Undo is unavailable in the current context")
+
+
+def push_undo(message):
+    ensure_undo()
     result = bpy.ops.ed.undo_push(message=message)
     if "FINISHED" not in result:
         raise PoseBridgeError(f"Blender could not create undo step: {message}")

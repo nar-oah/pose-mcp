@@ -10,3 +10,4 @@ class PendingRequest:
     done: threading.Event = field(default_factory=threading.Event)
     result: object = None
     error: str | None = None
+    cancelled: bool = False
