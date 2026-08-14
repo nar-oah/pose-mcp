@@ -43,6 +43,7 @@ class BridgeSocketServer:
         self.server_socket = None
 
     def _serve(self):
+        server = None
         try:
             server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -64,6 +65,8 @@ class BridgeSocketServer:
                 self.last_error = str(exc)
         finally:
             self.ready.clear()
+            if server:
+                server.close()
 
     def _handle_connection(self, connection):
         request_id = None
