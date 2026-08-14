@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import sys
 import unittest
@@ -12,7 +13,13 @@ from blender_pose_bridge.armature import find_armature
 from blender_pose_bridge.errors import PoseBridgeError
 from blender_pose_bridge.pose_ops import reset_pose, set_bone_pose
 from blender_pose_bridge.read_ops import get_pose, get_rig, ping
+from blender_pose_bridge.smplx import set_bone_rot
 from blender_pose_bridge.undo_ops import undo
+
+REFERENCE_PATH = os.path.join(REPO_ROOT, "reference", "main.py")
+SPEC = importlib.util.spec_from_file_location("verified_pose_reference", REFERENCE_PATH)
+REFERENCE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(REFERENCE)
 
 
 def make_armature(name, bone_name="head"):
@@ -39,10 +46,14 @@ class BlenderBridgeTests(unittest.TestCase):
 
     def test_one_armature_is_selected_and_readable(self):
         armature = make_armature("Character")
+        armature.pose.bones["head"].constraints.new("IK")
         self.assertIs(find_armature(), armature)
         self.assertEqual(ping()["armature"], "Character")
         self.assertEqual(get_pose()["bones"][0]["bone"], "head")
-        self.assertEqual(get_rig()["bones"][0]["semantic"], "head")
+        rig_bone = get_rig()["bones"][0]
+        self.assertEqual(rig_bone["semantic"], "head")
+        self.assertTrue(rig_bone["has_ik_constraint"])
+        self.assertEqual(len(rig_bone["rest"]["matrix_local"]), 4)
 
     def test_multiple_armatures_lists_names(self):
         make_armature("CharacterB")
@@ -71,6 +82,29 @@ class BlenderBridgeTests(unittest.TestCase):
         self.assertEqual(reset_pose({"scope": "all"})["reset_bones"], 1)
         reset = find_armature().pose.bones["head"].rotation_quaternion
         self.assertAlmostEqual(abs(reset.w), 1.0, places=5)
+
+    def test_smplx_conversion_matches_verified_main(self):
+        armature = make_armature("Character", "ours")
+        bpy.context.view_layer.objects.active = armature
+        bpy.ops.object.mode_set(mode="EDIT")
+        reference_bone = armature.data.edit_bones.new("reference")
+        reference_bone.head = (0, 0, 0)
+        reference_bone.tail = (0, 0, 1)
+        bpy.ops.object.mode_set(mode="OBJECT")
+        ours = armature.pose.bones["ours"]
+        reference = armature.pose.bones["reference"]
+        cases = (
+            ({"is_root": True}, [0.2, -0.1, 0.3]),
+            ({"is_hand": True}, [0.1, 0.2, -0.2]),
+            ({"offset_euler": (0, 0, 30)}, [-0.3, 0.1, 0.2]),
+        )
+        for options, rotvec in cases:
+            set_bone_rot(ours, rotvec, **options)
+            REFERENCE.set_bone_rot(reference, rotvec, **options)
+            difference = ours.rotation_quaternion.rotation_difference(
+                reference.rotation_quaternion
+            )
+            self.assertAlmostEqual(difference.angle, 0.0, places=6)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(BlenderBridgeTests)
