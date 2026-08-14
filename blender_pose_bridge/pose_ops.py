@@ -1,3 +1,4 @@
+import bpy
 from mathutils import Matrix
 
 from .armature import find_armature, pose_bone
@@ -30,6 +31,7 @@ def set_pose_batch(params):
     for bone, rotation, mode in validated:
         set_local_rotation(bone, rotation, mode)
     armature.update_tag()
+    bpy.context.view_layer.update()
     push_undo("MCP Pose Batch")
     return {
         "armature": armature.name,
@@ -51,6 +53,7 @@ def reset_pose(params):
     for bone in armature.pose.bones:
         bone.matrix_basis = Matrix.Identity(4)
     armature.update_tag()
+    bpy.context.view_layer.update()
     push_undo("MCP Reset Pose")
     return {
         "armature": armature.name,

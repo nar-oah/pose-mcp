@@ -10,7 +10,9 @@ if REPO_ROOT not in sys.path:
 
 from blender_pose_bridge.armature import find_armature
 from blender_pose_bridge.errors import PoseBridgeError
+from blender_pose_bridge.pose_ops import reset_pose, set_bone_pose
 from blender_pose_bridge.read_ops import get_pose, get_rig, ping
+from blender_pose_bridge.undo_ops import undo
 
 
 def make_armature(name, bone_name="head"):
@@ -49,6 +51,26 @@ class BlenderBridgeTests(unittest.TestCase):
             PoseBridgeError, r"\['CharacterA', 'CharacterB'\]"
         ):
             find_armature()
+
+    def test_pose_edit_undo_and_reset(self):
+        make_armature("Character")
+        bpy.ops.ed.undo_push(message="Test fixture")
+        result = set_bone_pose(
+            {"bone": "head", "rotation_degrees": [0, 0, 15], "mode": "delta"}
+        )
+        self.assertEqual(result["undo_steps"], 1)
+        self.assertGreater(
+            abs(find_armature().pose.bones["head"].rotation_quaternion.z), 0.1
+        )
+        self.assertTrue(undo()["undone"])
+        restored = find_armature().pose.bones["head"].rotation_quaternion
+        self.assertAlmostEqual(abs(restored.w), 1.0, places=5)
+        set_bone_pose(
+            {"bone": "head", "rotation_degrees": [5, 0, 0], "mode": "absolute"}
+        )
+        self.assertEqual(reset_pose({"scope": "all"})["reset_bones"], 1)
+        reset = find_armature().pose.bones["head"].rotation_quaternion
+        self.assertAlmostEqual(abs(reset.w), 1.0, places=5)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(BlenderBridgeTests)
