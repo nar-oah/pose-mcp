@@ -113,6 +113,12 @@ blender --background --factory-startup --python tests/blender_conversion_test.py
 blender --background --factory-startup --python tests/blender_tcp_test.py
 ```
 
+可选的前台 VIEW_3D 截图测试会短暂打开 Blender、删除测试 PNG 后自动退出：
+
+```bash
+blender --factory-startup --python-exit-code 1 --python tests/blender_viewport_test.py
+```
+
 手动 smoke test：在一个包含唯一目标 Armature（且含 `head`）的 Blender 中，
 从 Text Editor 打开并运行 `tests/blender_smoke_test.py`。它依次执行 ping、
 get_rig、get_pose、修改 head、undo、reset。**最后一步会重置当前 Pose**，但脚本
