@@ -1,19 +1,10 @@
-import json
 import queue
 import socket
 import threading
 import time
-from dataclasses import dataclass, field
 
-
-@dataclass
-class PendingRequest:
-    request_id: object
-    method: str
-    params: dict
-    done: threading.Event = field(default_factory=threading.Event)
-    result: object = None
-    error: str | None = None
+from .pending import PendingRequest
+from .wire import read_message, send_response
 
 
 class BridgeSocketServer:
@@ -77,7 +68,7 @@ class BridgeSocketServer:
     def _handle_connection(self, connection):
         request_id = None
         try:
-            message = self._read_message(connection)
+            message = read_message(connection)
             request_id = message.get("id")
             pending = PendingRequest(
                 request_id, message.get("method"), message.get("params", {})
@@ -90,30 +81,9 @@ class BridgeSocketServer:
                     break
             response = {"id": request_id, "ok": pending.error is None}
             response["error" if pending.error else "result"] = pending.error or pending.result
-        except (ValueError, OSError, json.JSONDecodeError) as exc:
+        except (ValueError, OSError) as exc:
             response = {"id": request_id, "ok": False, "error": str(exc)}
-        try:
-            connection.sendall(json.dumps(response).encode() + b"\n")
-        except OSError:
-            pass
-
-    @staticmethod
-    def _read_message(connection):
-        connection.settimeout(5.0)
-        data = bytearray()
-        while b"\n" not in data:
-            chunk = connection.recv(65536)
-            if not chunk:
-                break
-            data.extend(chunk)
-            if len(data) > 16 * 1024 * 1024:
-                raise ValueError("Bridge request exceeded 16 MiB")
-        if not data:
-            raise ValueError("Empty Bridge request")
-        message = json.loads(bytes(data).split(b"\n", 1)[0])
-        if not isinstance(message, dict):
-            raise ValueError("Bridge request must be a JSON object")
-        return message
+        send_response(connection, response)
 
     def drain(self, handler, limit=8):
         for _index in range(limit):
