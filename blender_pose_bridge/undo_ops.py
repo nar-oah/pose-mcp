@@ -14,6 +14,7 @@ def push_undo(message):
 
 def undo():
     armature = find_armature()
+    armature_name = armature.name
     if not bpy.ops.ed.undo.poll():
         raise PoseBridgeError("Blender Undo is unavailable or the undo stack is empty")
     result = bpy.ops.ed.undo()
@@ -23,5 +24,5 @@ def undo():
     return {
         "undone": True,
         "system": "Blender global undo",
-        "armature": armature.name,
+        "armature": armature_name,
     }

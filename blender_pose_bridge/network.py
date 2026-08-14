@@ -92,7 +92,10 @@ class BridgeSocketServer:
             response["error" if pending.error else "result"] = pending.error or pending.result
         except (ValueError, OSError, json.JSONDecodeError) as exc:
             response = {"id": request_id, "ok": False, "error": str(exc)}
-        connection.sendall(json.dumps(response).encode() + b"\n")
+        try:
+            connection.sendall(json.dumps(response).encode() + b"\n")
+        except OSError:
+            pass
 
     @staticmethod
     def _read_message(connection):
