@@ -24,7 +24,6 @@ def make_armature():
 
 filepath = None
 try:
-    bpy.ops.wm.read_factory_settings(use_empty=True)
     make_armature()
     result = get_viewport()
     filepath = result["path"]
