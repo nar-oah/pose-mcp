@@ -31,6 +31,7 @@ def get_pose():
     armature = find_armature()
     return {
         "armature": armature.name,
+        "space": "local pose-bone rotation; Euler order XYZ; angles in degrees",
         "coordinate_spaces": {
             "rotation": "local pose-bone rotation; Euler order XYZ; degrees",
             "armature_position": "posed head/tail in Armature object space",
