@@ -8,6 +8,7 @@ from .models import (
     BoneChange, ResetScope, RootPose, RotationMode, RotvecList, SmplxPose,
     Vector3,
 )
+from .presentation import pose_inspection_result
 
 BatchChanges = Annotated[list[BoneChange], Field(min_length=1, max_length=256)]
 
@@ -75,9 +76,9 @@ def register_tools(mcp: MCPServer, bridge: BridgeClient) -> None:
         return bridge.call("undo")
 
     @mcp.tool()
-    def get_viewport() -> dict[str, Any]:
-        """Render the current VIEW_3D to a temporary PNG and return its local path."""
-        return bridge.call("get_viewport")
+    def get_viewport():
+        """Return structured Pose data and fixed front/left/right/back PNG views."""
+        return pose_inspection_result(bridge.call("get_viewport"))
 
     @mcp.tool()
     def save_blend() -> dict[str, Any]:
