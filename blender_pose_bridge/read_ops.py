@@ -2,7 +2,7 @@ import bpy
 
 from .armature import find_armature
 from .constants import BODY_BONES, HAND_BONES, ROOT_BONE, SEMANTIC_BONES
-from .serialization import bone_state, rig_bone_data
+from .serialization import pose_bone_data, rig_bone_data
 
 
 def ping():
@@ -31,6 +31,15 @@ def get_pose():
     armature = find_armature()
     return {
         "armature": armature.name,
-        "space": "local pose-bone rotation; Euler order XYZ; angles in degrees",
-        "bones": [bone_state(bone) for bone in armature.pose.bones],
+        "coordinate_spaces": {
+            "rotation": "local pose-bone rotation; Euler order XYZ; degrees",
+            "armature_position": "posed head/tail in Armature object space",
+            "world_position": "posed head/tail after Armature matrix_world",
+        },
+        "armature_matrix_world": [
+            [float(value) for value in row] for row in armature.matrix_world
+        ],
+        "bones": [
+            pose_bone_data(armature, bone) for bone in armature.pose.bones
+        ],
     }
