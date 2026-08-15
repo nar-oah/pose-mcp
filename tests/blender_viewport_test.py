@@ -8,6 +8,7 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 from blender_pose_bridge.file_ops import get_viewport
+from blender_pose_bridge.viewport_context import find_view3d_context, save_view_state
 
 
 def make_armature():
@@ -22,16 +23,28 @@ def make_armature():
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
-filepath = None
+filepaths = []
 try:
     make_armature()
+    region_3d = find_view3d_context()[3]
+    original_view = save_view_state(region_3d)
     result = get_viewport()
-    filepath = result["path"]
-    assert result["mime_type"] == "image/png", result
-    assert result["size_bytes"] > 0, result
-    assert os.path.isfile(filepath), result
-    print(f"Blender VIEW_3D capture: OK ({result['size_bytes']} bytes)")
+    restored_view = save_view_state(region_3d)
+    filepaths = [view["path"] for view in result["views"]]
+    assert [view["name"] for view in result["views"]] == [
+        "front", "left", "right", "back"
+    ], result
+    assert all(view["mime_type"] == "image/png" for view in result["views"])
+    assert all(view["size_bytes"] > 0 for view in result["views"]), result
+    assert all(view["height"] <= 768 for view in result["views"]), result
+    assert len({(view["width"], view["height"]) for view in result["views"]}) == 1
+    assert all(os.path.isfile(filepath) for filepath in filepaths), result
+    assert result["pose"]["bones"][0]["bone"] == "head", result
+    assert original_view == restored_view, (original_view, restored_view)
+    size = sum(view["size_bytes"] for view in result["views"])
+    print(f"Blender fixed multi-view capture: OK ({size} bytes)")
 finally:
-    if filepath and os.path.isfile(filepath):
-        os.unlink(filepath)
+    for filepath in filepaths:
+        if os.path.isfile(filepath):
+            os.unlink(filepath)
     bpy.ops.wm.quit_blender()

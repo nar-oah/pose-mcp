@@ -45,6 +45,25 @@ def bone_state(pose_bone):
     }
 
 
+def pose_bone_data(armature, pose_bone):
+    to_world = armature.matrix_world
+    data = bone_state(pose_bone)
+    data.update(
+        {
+            "parent": pose_bone.parent.name if pose_bone.parent else None,
+            "head_position": {
+                "armature": _floats(pose_bone.head),
+                "world": _floats(to_world @ pose_bone.head),
+            },
+            "tail_position": {
+                "armature": _floats(pose_bone.tail),
+                "world": _floats(to_world @ pose_bone.tail),
+            },
+        }
+    )
+    return data
+
+
 def rig_bone_data(pose_bone):
     bone = pose_bone.bone
     constraints = [_constraint_data(item) for item in pose_bone.constraints]
