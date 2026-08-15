@@ -42,7 +42,12 @@ class BlenderBridgeTests(unittest.TestCase):
         armature.pose.bones["head"].constraints.new("IK")
         self.assertIs(find_armature(), armature)
         self.assertEqual(ping()["armature"], "Character")
-        self.assertEqual(get_pose()["bones"][0]["bone"], "head")
+        pose = get_pose()
+        self.assertEqual(pose["bones"][0]["bone"], "head")
+        self.assertEqual(
+            pose["bones"][0]["head_position"]["world"], [0.0, 0.0, 0.0]
+        )
+        self.assertEqual(len(pose["armature_matrix_world"]), 4)
         rig_bone = get_rig()["bones"][0]
         self.assertEqual(rig_bone["semantic"], "head")
         self.assertTrue(rig_bone["has_ik_constraint"])
