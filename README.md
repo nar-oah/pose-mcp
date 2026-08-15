@@ -43,6 +43,7 @@ brew install uv
 uv sync
 ```
 
+其他安装方式见 [uv 官方安装说明](https://docs.astral.sh/uv/getting-started/installation/)。
 `uv sync` 会依据 `pyproject.toml` 创建 `.venv`、解析依赖并以 editable 模式安装
 当前项目。依赖只有官方 `mcp` 包及其运行时依赖；不需要 PyTorch、Transformers、
 sentence-transformers、LaBSE、Ollama、embedding/vector database 或本地 LLM，
@@ -84,7 +85,8 @@ tool_timeout_sec = 60
   Armature 空间和世界空间中的坐标。
 - `get_viewport` 一次返回上述结构化 Pose 快照和固定的前、左、右、后四张正交
   视图。PNG 既以内嵌 MCP 图片交给 Codex 视觉检查，也在系统临时目录中提供路径；
-  截图完成后会恢复原来的视口方向，不污染项目。
+  图片保持原纵横比且高度不超过 768px，截图完成后会恢复原来的视口方向，不污染
+  项目。
 - `save_blend` 永不自动调用。未曾保存过、没有文件路径的项目会返回错误。
 
 完整 SMPL-X 参数形状与原脚本一致，例如：

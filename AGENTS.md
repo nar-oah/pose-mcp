@@ -9,7 +9,8 @@ When using the `blender-pose` MCP to adjust a human pose:
 5. Finish with neck, head, and hands.
 6. Prefer `set_pose_batch` over many single-bone calls.
 7. Call `get_viewport` after making changes.
-8. Inspect the image and continue refining; do not assume one description is done.
+8. Inspect the structured Pose data and every fixed view, then continue refining;
+   do not assume one description is done.
 9. Never call `save_blend` unless the user explicitly asks to save.
 
 Use the real Blender bone names returned with the semantic labels. Use
