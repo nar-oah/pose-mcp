@@ -3,6 +3,7 @@ import tempfile
 import uuid
 
 import bpy
+from mathutils import Quaternion
 
 from .armature import find_armature
 from .errors import PoseBridgeError
@@ -11,10 +12,10 @@ from .viewport_context import find_view3d_context, restore_view, save_view_state
 from .viewport_frame import fit_frame
 
 FIXED_VIEWS = (
-    ("front", "FRONT"),
-    ("left", "LEFT"),
-    ("right", "RIGHT"),
-    ("back", "BACK"),
+    ("front", "FRONT", (0.707107, 0.707107, 0.0, 0.0)),
+    ("left", "LEFT", (0.5, 0.5, -0.5, -0.5)),
+    ("right", "RIGHT", (0.5, 0.5, 0.5, 0.5)),
+    ("back", "BACK", (0.0, 0.0, 0.707107, 0.707107)),
 )
 MAX_VIEW_HEIGHT = 768
 
@@ -35,7 +36,7 @@ def _normalize_image(filepath):
         bpy.data.images.remove(image)
 
 
-def _capture_view(context, center, distance, name, axis):
+def _capture_view(context, center, distance, name, axis, rotation):
     window, area, region, region_3d = context
     filepath = os.path.join(
         tempfile.gettempdir(), f"blender_pose_{uuid.uuid4().hex}_{name}.png"
@@ -44,7 +45,7 @@ def _capture_view(context, center, distance, name, axis):
     with bpy.context.temp_override(
         window=window, screen=window.screen, area=area, region=region
     ):
-        bpy.ops.view3d.view_axis(type=axis, align_active=False)
+        region_3d.view_rotation = Quaternion(rotation)
         region_3d.view_location = center
         region_3d.view_distance = distance
         region_3d.view_perspective = "ORTHO"
@@ -55,6 +56,7 @@ def _capture_view(context, center, distance, name, axis):
     return {
         "name": name,
         "axis": axis,
+        "view_rotation": list(rotation),
         "projection": "orthographic",
         "path": filepath,
         "mime_type": "image/png",
@@ -81,8 +83,8 @@ def get_viewport():
         scene.render.image_settings.file_format = "PNG"
         scene.render.use_file_extension = True
         views = [
-            _capture_view(context, center, distance, name, axis)
-            for name, axis in FIXED_VIEWS
+            _capture_view(context, center, distance, name, axis, rotation)
+            for name, axis, rotation in FIXED_VIEWS
         ]
     finally:
         scene.render.filepath = old_render[0]

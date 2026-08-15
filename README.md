@@ -12,7 +12,7 @@ Codex -> MCP stdio server -> 127.0.0.1:8766 JSON/TCP -> Blender add-on
 
 - `blender_pose_bridge/`：安装到 Blender 的独立 Add-on。启用后自动监听
   `127.0.0.1:8766`，禁用时关闭 socket、后台线程和 timer。
-- `blender_pose_mcp/`：在普通 Python venv 中运行的官方 MCP Python SDK v2
+- `blender_pose_mcp/`：在 `uv` 管理的 Python 环境中运行的官方 MCP Python SDK v2
   stdio Server。
 - `reference/main.py`：原始且不修改的 `SMPLest-X Loader` 参考实现。
 
