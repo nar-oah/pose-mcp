@@ -16,6 +16,23 @@ FIXED_VIEWS = (
     ("right", "RIGHT"),
     ("back", "BACK"),
 )
+MAX_VIEW_HEIGHT = 768
+
+
+def _normalize_image(filepath):
+    image = bpy.data.images.load(filepath, check_existing=False)
+    try:
+        width, height = image.size
+        if height > MAX_VIEW_HEIGHT:
+            width = round(width * MAX_VIEW_HEIGHT / height)
+            height = MAX_VIEW_HEIGHT
+            image.scale(width, height)
+            image.filepath_raw = filepath
+            image.file_format = "PNG"
+            image.save()
+        return int(width), int(height)
+    finally:
+        bpy.data.images.remove(image)
 
 
 def _capture_view(context, center, distance, name, axis):
@@ -34,6 +51,7 @@ def _capture_view(context, center, distance, name, axis):
         result = bpy.ops.render.opengl(write_still=True, view_context=True)
     if "FINISHED" not in result or not os.path.isfile(filepath):
         raise PoseBridgeError(f"Blender did not produce the fixed {name} view PNG")
+    width, height = _normalize_image(filepath)
     return {
         "name": name,
         "axis": axis,
@@ -41,8 +59,8 @@ def _capture_view(context, center, distance, name, axis):
         "path": filepath,
         "mime_type": "image/png",
         "size_bytes": os.path.getsize(filepath),
-        "width": region.width,
-        "height": region.height,
+        "width": width,
+        "height": height,
     }
 
 

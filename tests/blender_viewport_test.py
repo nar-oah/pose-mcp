@@ -32,6 +32,7 @@ try:
     ], result
     assert all(view["mime_type"] == "image/png" for view in result["views"])
     assert all(view["size_bytes"] > 0 for view in result["views"]), result
+    assert all(view["height"] <= 768 for view in result["views"]), result
     assert all(os.path.isfile(filepath) for filepath in filepaths), result
     assert result["pose"]["bones"][0]["bone"] == "head", result
     size = sum(view["size_bytes"] for view in result["views"])
