@@ -33,36 +33,35 @@ ditto -c -k --sequesterRsrc --keepParent blender_pose_bridge blender_pose_bridge
 **SMPLest-X Loader (Simplified)** 使用不同的类名、Panel、PropertyGroup 和
 Operator ID，可以同时启用。3D View 侧栏的 `Pose Bridge` 页会显示在线状态。
 
-## 安装 MCP Python 环境（macOS）
+## 安装 MCP Python 环境（macOS + uv）
 
-MCP Server 要在普通 Python 中运行，不使用 Blender 自带 Python：
+MCP Server 要在普通 Python 中运行，不使用 Blender 自带 Python。先安装 `uv`，
+再同步项目环境：
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python -m pip install -e . --no-deps
+brew install uv
+uv sync
 ```
 
-依赖只有官方 `mcp` 包及其运行时依赖。不需要 PyTorch、Transformers、
-sentence-transformers、LaBSE、Ollama、embedding/vector database 或本地 LLM。
-如果 macOS/Homebrew Python 受 PEP 668 管理，必须使用上面的 venv；不要使用
-`--break-system-packages`。
+`uv sync` 会依据 `pyproject.toml` 创建 `.venv`、解析依赖并以 editable 模式安装
+当前项目。依赖只有官方 `mcp` 包及其运行时依赖；不需要 PyTorch、Transformers、
+sentence-transformers、LaBSE、Ollama、embedding/vector database 或本地 LLM，
+也不需要手动激活虚拟环境。
 
 ## 添加到 Codex
 
 把 `/ABSOLUTE/PATH/blender-pose-tools` 替换成仓库绝对路径：
 
 ```bash
-codex mcp add blender-pose -- /ABSOLUTE/PATH/blender-pose-tools/.venv/bin/python -m blender_pose_mcp
+codex mcp add blender-pose -- uv --directory /ABSOLUTE/PATH/blender-pose-tools run blender-pose-mcp
 ```
 
 也可以写入 `~/.codex/config.toml` 或可信项目的 `.codex/config.toml`：
 
 ```toml
 [mcp_servers.blender-pose]
-command = "/ABSOLUTE/PATH/blender-pose-tools/.venv/bin/python"
-args = ["-m", "blender_pose_mcp"]
+command = "uv"
+args = ["--directory", "/ABSOLUTE/PATH/blender-pose-tools", "run", "blender-pose-mcp"]
 cwd = "/ABSOLUTE/PATH/blender-pose-tools"
 startup_timeout_sec = 10
 tool_timeout_sec = 60
@@ -81,8 +80,11 @@ tool_timeout_sec = 60
   它保留原脚本的 rotvec、Root、Hand、坐标系和 `matrix_local` basis 转换。
 - `reset_pose` 当前只接受 `{"scope": "all"}`，用 `matrix_basis` 恢复基础 Pose，
   不修改 Rest Pose。
-- `get_viewport` 从当前 `VIEW_3D` 做 OpenGL viewport render，PNG 写入系统临时
-  目录并返回路径，不污染项目。
+- `get_pose` 返回每根骨骼的语义、父级、本地旋转，以及 Pose 后 head/tail 在
+  Armature 空间和世界空间中的坐标。
+- `get_viewport` 一次返回上述结构化 Pose 快照和固定的前、左、右、后四张正交
+  视图。PNG 既以内嵌 MCP 图片交给 Codex 视觉检查，也在系统临时目录中提供路径；
+  截图完成后会恢复原来的视口方向，不污染项目。
 - `save_blend` 永不自动调用。未曾保存过、没有文件路径的项目会返回错误。
 
 完整 SMPL-X 参数形状与原脚本一致，例如：
@@ -102,7 +104,7 @@ tool_timeout_sec = 60
 和多个 Armature 错误：
 
 ```bash
-.venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
+uv run python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 真实 Blender 后台测试只创建测试 Armature，不创建或修改 Mesh：
